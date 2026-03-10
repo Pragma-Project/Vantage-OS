@@ -1,0 +1,21 @@
+<NotepadPlus>
+    <Project name="NimOS">
+        <Folder name="Docs">
+            <File name="File Descriptions List.md" />
+            <File name="PROJECT_STATUS.md" />
+            <File name="QUICKSTART.md" />
+            <File name="README.md" />
+            <File name="TODO.md" />
+            <File name="BUILD.md" />
+            <File name="VMWARE.md" />
+        </Folder>
+        <Folder name="Kernel">
+            <File name="kernel.nim" />
+        </Folder>
+        <Folder name="Glue">
+            <File name="limine.conf" />
+            <File name="start.S" />
+            <File name="linker.ld" />
+        </Folder>
+    </Project>
+</NotepadPlus>

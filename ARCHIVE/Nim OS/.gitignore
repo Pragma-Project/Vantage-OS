@@ -1,0 +1,9 @@
+build/
+limine/
+*.log
+*.bin
+nimos.iso
+kernel.elf
+nul:
+__pycache__/
+*.pyc

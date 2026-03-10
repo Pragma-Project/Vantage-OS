@@ -1,0 +1,63 @@
+Limine’s v8.7.0 framebuffer struct is slightly different from what you’re using: after bpp there is explicit padding and then the masks; your Nim layout is shifting everything past width so height/pitch/bpp read as zero.
+
+Exact v8 framebuffer layout to mirror
+From the v8 protocol bindings (Rust/limine‑protocol, which mirror the C header):
+
+address: *mut u8
+
+width: u16
+
+height: u16
+
+pitch: u16 ← bytes per line
+
+bpp: u16
+
+memory_model: u8
+
+red_mask_size: u8
+
+red_mask_shift: u8
+
+green_mask_size: u8
+
+green_mask_shift: u8
+
+blue_mask_size: u8
+
+blue_mask_shift: u8
+
+__pad: [u8; 7] ← padding to keep later fields aligned
+
+edid_size: u64
+
+edid: *mut u8
+
+Your Nim now needs that explicit 7‑byte pad before edidSize:
+
+text
+type
+  LimineFramebuffer* = object
+    address*: pointer      # *mut u8
+    width*: uint16
+    height*: uint16
+    pitch*: uint16         # bytes per scanline
+    bpp*: uint16
+    memoryModel*: uint8
+    redMaskSize*: uint8
+    redMaskShift*: uint8
+    greenMaskSize*: uint8
+    greenMaskShift*: uint8
+    blueMaskSize*: uint8
+    blueMaskShift*: uint8
+    pad*: array[7, uint8]  # critical padding
+    edidSize*: uint64
+    edid*: pointer
+With that padding in place, the offsets of height, pitch, and bpp line up with Limine’s C struct, and your existing pixel formula:
+
+text
+let bytesPerPixel = fb.bpp.int div 8
+let offset = y * fb.pitch.int + x * bytesPerPixel
+let pixel = cast[ptr uint32](cast[uint](fb.address) + offset.uint)
+pixel[] = color
+will finally see non‑zero height/pitch/bpp and hit the right addresses.
