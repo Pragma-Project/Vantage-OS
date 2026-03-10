@@ -1,0 +1,259 @@
+constant int FS_FILE = 0
+constant int FS_DIRECTORY = 1
+
+type FSObject
+  int FSType
+  chararray_64 Name
+  FSObject <Parent>
+  int Size
+  none Impl
+end type
+
+type FSFileHandle
+  FSObject <Object>
+  int Position
+end type
+
+type FSDirectoryHandle
+  FSObject <Object>
+  int Index
+end type
+
+constant int vfsSeekSet = 0
+constant int vfsSeekCur = 1
+constant int vfsSeekEnd = 2
+
+constant int vfsOk = 0
+constant int vfsErrNotFound = 1
+constant int vfsErrIo = 2
+constant int vfsErrInval = 3
+constant int vfsErrPerm = 4
+constant int vfsErrExist = 5
+constant int vfsErrNotEmpty = 6
+constant int vfsErrNoSpace = 7
+constant int vfsErrNotDir = 8
+constant int vfsErrIsDir = 9
+constant int vfsErrAgain = 10
+
+type VfsStat
+  int size
+  int mode
+  int nLinks
+  int inodeId
+  int atime
+  int mtime
+  int ctime
+end type
+
+// interface VfsFileOps (vtable — use interface keyword in Pragma)
+
+// interface VfsFsOps (vtable — use interface keyword in Pragma)
+
+type VfsMount
+  chararray_64 prefix
+  VfsFsOps fsOps
+  VfsFileOps fileOps
+end type
+
+array VfsMount[8] vfsMounts
+int vfsMountCount
+array VfsMount[8] vfsMounts
+int vfsMountCount = 0
+function startsWithBare(string s, string prefix) returns int
+  int i = 0
+  while prefix[i] != 0 do
+    if s[i] != prefix[i]
+      return 0
+    end if
+    i++
+  end do
+  return 1
+end function
+
+function vfsLookupMount(string path) returns <VfsMount>
+  VfsMount <best> = change(0)->none
+  int bestLen = -1
+  for int i = 0 while i < vfsMountCount do i++
+    int plen = 0
+    string p = vfsMounts[i].prefix
+    while p[plen] do
+      plen++
+    end do
+    if startsWithBare(path, vfsMounts[i].prefix) and (plen > bestLen)
+      best = address(vfsMounts[i])
+      bestLen = plen
+    end if
+  end for
+  return best
+end function
+
+function FSFileOpen(FSObject <Obj>) returns FSFileHandle
+  FSFileHandle H = /* unsupported: InitList */
+  if (Obj == change(0)->none) or (Obj.FSType != FS_FILE)
+    return H
+  end if
+  H.Object = Obj
+  H.Position = 0
+  return H
+end function
+
+function FSFileClose(FSFileHandle <H>) returns void
+  H.Object = change(0)->none
+  H.Position = 0
+end function
+
+function FSFileRead(FSFileHandle <H>, none Buffer, int Length) returns int
+  if (H.Object == change(0)->none) or (H.Object.FSType != FS_FILE)
+    return 0
+  end if
+  return 0
+end function
+
+function FSFileWrite(FSFileHandle <H>, none Buffer, int Length) returns int
+  if (H.Object == change(0)->none) or (H.Object.FSType != FS_FILE)
+    return 0
+  end if
+  return 0
+end function
+
+function FSFileSeek(FSFileHandle <H>, int NewPos) returns void
+  if (H.Object == change(0)->none) or (H.Object.FSType != FS_FILE)
+    return
+  end if
+  H.Position = NewPos
+end function
+
+function FSDirectoryOpen(FSObject <Obj>) returns FSDirectoryHandle
+  FSDirectoryHandle H = /* unsupported: InitList */
+  if (Obj == change(0)->none) or (Obj.FSType != FS_DIRECTORY)
+    return H
+  end if
+  H.Object = Obj
+  H.Index = 0
+  return H
+end function
+
+function FSDirectoryClose(FSDirectoryHandle <H>) returns void
+  H.Object = change(0)->none
+  H.Index = 0
+end function
+
+function FSDirectoryNext(FSDirectoryHandle <H>) returns <FSObject>
+  if (H.Object == change(0)->none) or (H.Object.FSType != FS_DIRECTORY)
+    return change(0)->none
+  end if
+  return change(0)->none
+end function
+
+function FSLookupPath(string Path) returns <FSObject>
+  return change(0)->none
+end function
+
+function FSOpenPath(string Path) returns FSFileHandle
+  FSObject <Obj> = FSLookupPath(Path)
+  return FSFileOpen(Obj)
+end function
+
+function vfsOpen(string path, int flags, int mode) returns int
+  VfsMount <m> = vfsLookupMount(path)
+  if (m == change(0)->none) or (m.fsOps.open == change(0)->none)
+    return -1
+  end if
+  return m.fsOps.open(path, flags, mode)
+end function
+
+function vfsClose(int fd) returns int
+  int lastErr = vfsErrNotFound
+  for int i = 0 while i < vfsMountCount do i++
+    if vfsMounts[i].fileOps.close != change(0)->none
+      int r = vfsMounts[i].fileOps.close(fd)
+      if r == vfsOk
+        return vfsOk
+      end if
+      if r != vfsErrNotFound
+        lastErr = r
+      end if
+    end if
+  end for
+  return lastErr
+end function
+
+function vfsRead(int fd, none buf, int count) returns int
+  for int i = 0 while i < vfsMountCount do i++
+    if vfsMounts[i].fileOps.read != change(0)->none
+      int n = vfsMounts[i].fileOps.read(fd, buf, count)
+      if n >= 0
+        return n
+      end if
+    end if
+  end for
+  return -1
+end function
+
+function vfsWrite(int fd, none buf, int count) returns int
+  for int i = 0 while i < vfsMountCount do i++
+    if vfsMounts[i].fileOps.write != change(0)->none
+      int n = vfsMounts[i].fileOps.write(fd, buf, count)
+      if n >= 0
+        return n
+      end if
+    end if
+  end for
+  return -1
+end function
+
+function vfsSeek(int fd, int offset, int whence) returns int
+  for int i = 0 while i < vfsMountCount do i++
+    if vfsMounts[i].fileOps.seek != change(0)->none
+      int pos = vfsMounts[i].fileOps.seek(fd, offset, whence)
+      if pos >= 0
+        return pos
+      end if
+    end if
+  end for
+  return -1
+end function
+
+function vfsUnlink(string path) returns int
+  VfsMount <m> = vfsLookupMount(path)
+  if m == change(0)->none
+    return vfsErrNotFound
+  end if
+  if m.fsOps.unlink == change(0)->none
+    return vfsErrInval
+  end if
+  return m.fsOps.unlink(path)
+end function
+
+function vfsMkdir(string path, int mode) returns int
+  VfsMount <m> = vfsLookupMount(path)
+  if m == change(0)->none
+    return vfsErrNotFound
+  end if
+  if m.fsOps.mkdir == change(0)->none
+    return vfsErrInval
+  end if
+  return m.fsOps.mkdir(path, mode)
+end function
+
+function vfsRmdir(string path) returns int
+  VfsMount <m> = vfsLookupMount(path)
+  if m == change(0)->none
+    return vfsErrNotFound
+  end if
+  if m.fsOps.rmdir == change(0)->none
+    return vfsErrInval
+  end if
+  return m.fsOps.rmdir(path)
+end function
+
+function vfsStat(string path, VfsStat <st>) returns int
+  VfsMount <m> = vfsLookupMount(path)
+  if m == change(0)->none
+    return vfsErrNotFound
+  end if
+  if m.fsOps.stat == change(0)->none
+    return vfsErrInval
+  end if
+  return m.fsOps.stat(path, st)
+end function

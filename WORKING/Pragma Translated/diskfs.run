@@ -1,0 +1,145 @@
+constant int FS_FILE = 0
+constant int FS_DIRECTORY = 1
+
+type FSObject
+  int FSType
+  chararray_64 Name
+  FSObject <Parent>
+  int Size
+  none Impl
+end type
+
+type FSFileHandle
+  FSObject <Object>
+  int Position
+end type
+
+type FSDirectoryHandle
+  FSObject <Object>
+  int Index
+end type
+
+constant int vfsSeekSet = 0
+constant int vfsSeekCur = 1
+constant int vfsSeekEnd = 2
+
+constant int vfsOk = 0
+constant int vfsErrNotFound = 1
+constant int vfsErrIo = 2
+constant int vfsErrInval = 3
+constant int vfsErrPerm = 4
+constant int vfsErrExist = 5
+constant int vfsErrNotEmpty = 6
+constant int vfsErrNoSpace = 7
+constant int vfsErrNotDir = 8
+constant int vfsErrIsDir = 9
+constant int vfsErrAgain = 10
+
+type VfsStat
+  int size
+  int mode
+  int nLinks
+  int inodeId
+  int atime
+  int mtime
+  int ctime
+end type
+
+// interface VfsFileOps (vtable — use interface keyword in Pragma)
+
+// interface VfsFsOps (vtable — use interface keyword in Pragma)
+
+type VfsMount
+  chararray_64 prefix
+  VfsFsOps fsOps
+  VfsFileOps fileOps
+end type
+
+array VfsMount[8] vfsMounts
+int vfsMountCount
+type FSSuperblock
+  int Magic
+  int TotalBlocks
+  int RootDirBlock
+end type
+
+constant int FSDirEntryUnused = 0
+constant int FSDirEntryFile = 1
+constant int FSDirEntryDir = 2
+
+type FSDirEntry
+  int EntryType
+  int NameLen
+  array[int][2] Reserved
+  int Size
+  int FirstBlock
+  chararray_56 Name
+end type
+
+type DiskFSInode
+  int DirEntryBlock
+  int DirEntryIndex
+end type
+
+type DiskFSListResult
+  array[FSObject][64] entries
+  int count
+end type
+
+FSSuperblock DiskFSSuper
+array FSDirEntry[64] DiskFSRootEntries
+int DiskFSRootCount
+FSSuperblock DiskFSSuper
+array FSDirEntry[64] DiskFSRootEntries
+int DiskFSRootCount
+function DiskReadBlock(int blk, none buf) returns void
+end function
+
+function DiskFSLoadSuperblock(void _) returns void
+  chararray_4096 tmp
+  DiskReadBlock(0, tmp)
+  DiskFSSuper.Magic = deref(change(tmp + 0)-><int>)
+  DiskFSSuper.TotalBlocks = deref(change(tmp + 4)-><int>)
+  DiskFSSuper.RootDirBlock = deref(change(tmp + 8)-><int>)
+end function
+
+function DiskFSLoadRootDir(void _) returns void
+  chararray_4096 tmp
+  DiskReadBlock(DiskFSSuper.RootDirBlock, tmp)
+  DiskFSRootCount = 0
+  int entrySize = change(size(FSDirEntry))->int
+  int maxEntries = change(4096u)->int / entrySize
+  for int i = 0 while (i < maxEntries) and (DiskFSRootCount < 64) do i++
+    FSDirEntry <ep> = change(tmp + (i * entrySize))-><FSDirEntry>
+    if change(ep.EntryType)->int != FSDirEntryUnused
+      DiskFSRootEntries[DiskFSRootCount] = deref(<ep>)
+      DiskFSRootCount++
+    end if
+  end for
+end function
+
+function DiskFSInit(void _) returns void
+  DiskFSLoadSuperblock()
+  DiskFSLoadRootDir()
+end function
+
+function DiskFSListRoot(void _) returns DiskFSListResult
+  DiskFSListResult res
+  res.count = DiskFSRootCount
+  for int idx = 0 while idx < DiskFSRootCount do idx++
+    FSDirEntry <ep> = address(DiskFSRootEntries[idx])
+    res.entries[idx].FSType = /* change(ep.EntryType)->int == FSDirEntryDir ? FS_DIRECTORY : FS_FILE */
+    res.entries[idx].Parent = change(0)->none
+    res.entries[idx].Size = change(ep.Size)->int
+    res.entries[idx].Impl = change(0)->none
+    int nLen = change(ep.NameLen)->int
+    if nLen > 63
+      nLen = 63
+    end if
+    for int ni = 0 while ni < nLen do ni++
+      res.entries[idx].Name[ni] = ep.Name[ni]
+    end for
+    res.entries[idx].Name[nLen] = 0
+  end for
+  return res
+end function

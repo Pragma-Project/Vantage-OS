@@ -1,0 +1,43 @@
+Date of Abandonment: 3/5/26
+
+There's three reasons why this project was abandoned.
+
+TLDR: 
+
+1. Linux's Hardware Compatibility I can just use as a base and would never compete with anyway.
+2. Nim is not that great a language afterall.
+3. Everything I want to do is already built, just scattered in a disorganized manner. This means you can skip reinventing the wheel and jump straight to a much further point along the path to completion. The idea is provide a single solution of what's maybe 100 solutions or more now.
+
+EXPANDED AND DETAILED REASONS:
+
+1. There is one crucial thing that has killed numerous OS's: hardware compatibility. Linux has it all. Performance is cared about, but from what I've gathered, sysadmins aren't generally RAM constrained via the OS so much as by the apps, and the biggest thing for them is uptime, not how lean the OS is. Linux already is in the low hundreds of MB, so the savings that could be realized are not monumental.  
+
+Building a kernel from scratch would entail losing all the hardware compatibility of Linux, which would automatically throw it into the hobby OS category alongside the "research OS" space that's less deadly but still a very, very hit and miss space (seL4 has done very well in embedded/secure, Rust's Redox is 10 years old and still as unpopular as ever).
+
+2. Another tangential reason is that the more I use Nim, the more I find myself fighting with one of the very things I was trying to redesign in this entire process: intuitive expression through code. Using terms of "proc" and "var" and using inline syntax with different rules and wide acceptance of styling means the code does not look great. What I found while reviewing available Nim codebases is that one space in particular seemed to be where it hung out - network security tools. Like perl, Nim allows for quick whipping up of solutions because of its flexibility to use its own runtime or compile to C or JS. Ironically, it carries the same all lowercase styling of perl and looks basically the same from what I remember of perl. I was also told by the one single project I found of only 3 OS projects in Nim that he had abandoned the project partially because of where he saw the community going and how it hadn't picked up support much. This lines up with where I see Nim used across GitHub - not OS's, not general-purpose apps, not a broad niche, but mainly pentesting tools. What Nim I do find that is more core seems to come from a small, dedicated community. The compiling to C and JS is amazing, but if you'd rather just write in C or JS, well...you haven't solved much in terms of problems, because you're still relying on them liking your language enough for this to matter. Yes, it doesn't have those damn pointers unless you want them, but this eventually led me to explore building my own language by my rules exactly to the spec I'm looking for. As it turned out, this was far more easy than I had been told it would be, or at least this has been the case thus far. I already have an entire website up and running with defined rules and syntax by way of a language reference, along with an integrated sales angle. I already have a transpiler that goes to C and back and back to C and is generating runnable binaries without compile-time errors. The selling points of Nim have decayed almost completely. I thoroughly enjoy writing my own language that takes the idea Nim had of transpilation and am actively working on it, and putting other languages in the planned pipeline that are core - like Python and Java. This makes it not stuck to C's dedicated community that "ain't goin' nowhere", and JS's decades-long tried and true, proven dominance over the web space. I have high doubts Nim takes anything away from either community to get them to migrate, but also doesn't target communities that might actually make use of the transpilation as an interface to low-level C (Java, but especially Python). Altogether this has led me to abandon Nim simply as a language alone.
+
+3. The third and major, true sole reason this was probably going to be abandoned anyway is because of further research in design that revealed an entirely new architectural method: building on top of Linux, taking advantage of the wide range of tools there already, and simply patching it all together as a userspace app. By doing this, I could get not only all the hardware compatibility, but all the appspace as well. That means the ML workloads UX - done. The ability to swap out the network stack? Done. The ability to drop Linux's scheduler? done. There's a huge, long laundry list of all the things Linux allows configuration for.
+
+The way it works is simple: Linux provides a tool by which you can strip down the kernel to the very bare essentials, and it's called KConfig. You choose what you don't want (no scheduler, no memory manager, etc.) and it just drops it. Drop too much and you may run into problems (everybody expects the linux VFS, etc.). Thankfully, there's a well-trodden path here so this is not a novel idea nor even action. 
+
+BOTTOM LINE: 
+	The goal from the outset was
+	1. Lean, efficient, just a tiny lean mean machine of what you need
+	2. Designed around data workloads. From tools to how the UX is already setup, you get everything you need right out of the box.
+	3. Max configurability? Want BSD's networking? ok. Linux? ok. Hot swap? ok.
+
+	The realization over time was
+	
+	1. You aren't matching the hardware compatibility because you had to learn how drivers are so intertwined with what's there that you would be rebuilding Linux anyway, which is pointless.
+	
+	2. Lean doesn't matter as much as "it works". The OS footprint can already be made tiny with what Linux offers, and the apps these people are running is the main bottleneck there anyway.
+****Revisiting this later may be of interest. Try to see what apps like Apache, MySQL, PHP, and 
+	others could be minimized. That may actually solve the problem I was trying to solve, but at the same tiee I know there are already tiny web servers like Netty, and probably similar solutions for the others. App logic in specific use cases/sectors might be more promising, but this starts being an entirely different discussion than an OS or even full-stack or major widely-adopted tech
+	
+	3. The "designed around data workloads" part is already built, just horrendously scattered - a promising finding in terms of what value I'd be adding. Even better, a dive into the linux kernel itself revealed that, too, is disorganized and not made easily accessible; that's even more reason to add value by doing what the community has failed to do: make a one or few stop solution(s) with docs that you can use to do what you want but were too burdened by complexity with before. I'm finding there's already PIECES of literally everything already built with years of effort from wide ranges of people with way more know-how than me.
+
+ This has changed the direction of the project fundamentally from the original "Build an OS from scratch" to "don't reinvent the wheel, just build a patchwork that puts it into a single shipped solution". Because of that, the core work done here may have some very minimal relevance (maybe the small amount of VFS work we did, etc.), but Linux can provide a much better version of the base than I could ever hope to achieve, and one that carries the Linux brand - another thing I can't even conceptually imagine competing with. 
+ Likewise, the Nim language after playing around in it instead of glossing over some code or docs has proven to not be what I had hoped for. I found building my own language far more rewarding and far more powerful than what Nim offers, all while having the natural language angle I wanted from the beginning. This second Nim situation calls for better planning next time - longer, more careful, in-depth planning. Confirm with higher confidence things will work out with whatever you're considering before jumping in head first just because you want to get started instead of just talking. The talking can save on the doing substantially. The Linux angles I discovered were just a learning exercise that would have had to have happened, but diving into Nim headfirst was not.
+ 
+ 3/5/26
+

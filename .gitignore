@@ -1,0 +1,21 @@
+# Build artifacts
+WORKING/build/
+*.o
+*.elf
+*.iso
+*.log
+
+# Limine bootloader — separate repo, install separately
+WORKING/limine/
+
+# Nim OS compiled outputs
+ARCHIVE/Nim OS/nimos.iso
+ARCHIVE/Nim OS/kernel.elf
+ARCHIVE/Nim OS/serial*.log
+ARCHIVE/Nim OS/debug.log
+ARCHIVE/Nim OS/qemu_pid.txt
+ARCHIVE/Nim OS/nul?
+
+# Python cache
+__pycache__/
+*.pyc
