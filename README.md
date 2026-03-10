@@ -1,4 +1,4 @@
-<img width="530" height="530" alt="Final Edited" src="https://github.com/user-attachments/assets/7a67bf54-be76-4814-8049-89a40f53d450" />
+<img width="570" height="570" alt="Final Edited" src="https://github.com/user-attachments/assets/7a67bf54-be76-4814-8049-89a40f53d450" />
 
 *Last Update: 3-9-26* --- 
 *Project Start: 3-6-26*
@@ -111,6 +111,7 @@ Sure, but if you look at something like the Linux kernel's [`net/`](https://elix
 What you'd want is something like faceted navigation — pick your hardware, it narrows to applicable protocols; pick a protocol, it narrows to related tooling and configuration. A dependency-aware configuration browser instead of a flat directory listing with 30 years of accumulated everything.
 
 It's not a replacement for Linux — Linux is extraordinary at what it does. While Linux is king of the enterprise server world, it is extremely meager in the personal computing space. The second problem this OS tries to solve is the same thing that made Windows dominate general purpose computing where Linux barely makes a mark: accessibility. By making things accessible to typical enterprise teams and smaller organizations without the spend for specialized hires, they could maximize performance through tweaking settings that were a heck of a lot less easy to work through in the past.
+
 
 
 
